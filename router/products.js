@@ -17,8 +17,8 @@ router.get("/", async (req, res) => {
 router.get("/search", async (req, res) => {
   try {
     const value = req.query.searchingValue.toLocaleLowerCase();
-    const products = await (await Products.find().select({ title: 1, urls: 1 }))
-      .filter((i) => i.title.toLocaleLowerCase().includes(value))
+    const products = await (await Products.find().select({ item: 1, url: 1 }))
+      .filter((i) => i.item.toLocaleLowerCase().includes(value))
       .filter((_, inx) => inx <= 4);
 
     if (!products.length) {
@@ -42,9 +42,11 @@ router.get("/search", async (req, res) => {
 });
 
 //--------Create products-----------
-router.post("/", upload.array("url"), async (req, res) => {
+
+router.post("/", upload.array("urls"), async (req, res) => {
   try {
-    const uploader = async (path) => await cloudinary.uploads(path, "Images");
+    const uploader = async (path) => await cloudinary.uploads(path, "olma.uz");
+
     const urls = [];
     if (req.files) {
       const files = req.files;
@@ -56,20 +58,36 @@ router.post("/", upload.array("url"), async (req, res) => {
       }
     }
 
-    let { item, price, category } = req.body;
-    let obj = {
-      item,
-      price,
-      category,
-      url: urls,
-      productId: "56",
-    };
+    const { error } = productValidate(req.body);
+    if (error) {
+      res.json({
+        state: false,
+        msg: error.details[0].message,
+        innerData: null,
+      });
+    }
 
-    res.send(obj);
+    const createProduct = await Products.create({ ...req.body, url: urls });
+
+    // checking
+    if (!createProduct) {
+      return res.status(400).json({
+        state: false,
+        msg: "Can not create",
+        innerData: createProduct,
+      });
+    }
+    const saveProduct = await createProduct.save();
+
+    res.status(201).json({
+      state: true,
+      msg: "Product was created",
+      innerData: saveProduct,
+    });
   } catch {
     res
       .status(500)
-      .json({ state: false, msg: "internal server3fwrgetr", innerdata: null });
+      .json({ state: false, msg: "Server error", innerData: null });
   }
 });
 
@@ -97,39 +115,3 @@ router.delete("/:_id", async (req, res) => {
 });
 
 module.exports = router;
-
-// router.post("/", upload.array("image"), async (req, res) => {
-//   try {
-//     const uploader = async (path) => await cloudinary.uploads(path, "Images");
-//     if (req.method === "POST") {
-//       const urls = [];
-//       if (req.files) {
-//         const files = req.files;
-//         for (const file of files) {
-//           const { path } = file;
-//           const newPath = await uploader(path);
-//           urls.push(newPath);
-//           fs.unlinkSync(path);
-//         }
-//       }
-//       const product = await AllProducts.create({
-//         name: req.body.name,
-//         image: urls,
-//       });
-//       try {
-//         const saveProduct = await product.save();
-//         res.json(saveProduct);
-//       } catch (error) {
-//         res.json(error);
-//       }
-//     } else {
-//       res.status(405).json({
-//         error: "unsuccess",
-//       });
-//     }
-//   } catch {
-//     res
-//       .status(500)
-//       .json({ state: false, msg: "Server error", innerData: null });
-//   }
-// });
