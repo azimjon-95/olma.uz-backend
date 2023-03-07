@@ -1,7 +1,7 @@
 const { Schema, model } = require("mongoose");
 const Joi = require("joi");
 
-const userSchema = new Schema({
+const adminSchema = new Schema({
   fname: {
     type: String,
     required: true,
@@ -18,11 +18,7 @@ const userSchema = new Schema({
     type: Number,
     required: true,
   },
-  img: {
-    type: String,
-    required: true,
-  },
-  country: {
+  gender: {
     type: String,
     required: true,
   },
@@ -37,15 +33,14 @@ const userSchema = new Schema({
   admin: Boolean,
 });
 
-const User = model("user", userSchema);
-const userValidate = (body) => {
+const Admin = model("admin", adminSchema);
+const adminValidate = (body) => {
   const schema = Joi.object({
     fname: Joi.string().required().min(2),
     lname: Joi.string().required().min(2),
-    age: Joi.number().required().min(1),
-    phoneNum: Joi.number().required().min(2),
-    img: Joi.string().required(),
-    country: Joi.string().required().min(2),
+    age: Joi.number(),
+    phoneNum: Joi.number(),
+    gender: Joi.string().required(),
     username: Joi.string().required().min(2),
     password: Joi.string().required().min(2),
     admin: Joi.boolean(),
@@ -53,4 +48,4 @@ const userValidate = (body) => {
   return schema.validate(body);
 };
 
-module.exports = { userValidate, User };
+module.exports = { adminValidate, Admin };
